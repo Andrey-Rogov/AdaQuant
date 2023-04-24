@@ -48,7 +48,7 @@ parser.add_argument('--results-dir', metavar='RESULTS_DIR', default='./results',
                     help='results dir')
 parser.add_argument('--save', metavar='SAVE', default='',
                     help='saved folder')
-parser.add_argument('--datasets-dir', metavar='DATASETS_DIR', default='/home/Datasets',
+parser.add_argument('--datasets-dir', metavar='DATASETS_DIR', default='../imagenet',
                     help='datasets dir')
 parser.add_argument('--dataset', metavar='DATASET', default='imagenet',
                     help='dataset name or folder')

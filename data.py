@@ -2,7 +2,6 @@ import os
 import torch
 import torchvision.datasets as datasets
 from torch.utils.data.distributed import DistributedSampler
-from torch.utils.data.sampler import RandomSampler
 from torch.utils.data import Subset
 from torch._utils import _accumulate
 from utils.regime import Regime
@@ -13,12 +12,102 @@ from copy import deepcopy
 import warnings
 import numpy as np
 from PIL import Image
+import re
+from torchvision import transforms as T
+from torch.utils.data import DataLoader, Subset, Dataset
 
 warnings.filterwarnings("ignore", "(Possibly )?corrupt EXIF data", UserWarning)
 
+from typing import Callable, cast
+
+
+_DATA_ARGS = {'name', 'split', 'transform',
+              'target_transform', 'download', 'datasets_path'}
+_DATALOADER_ARGS = {'batch_size', 'shuffle', 'sampler', 'batch_sampler',
+                    'num_workers', 'collate_fn', 'pin_memory', 'drop_last',
+                    'timeout', 'worker_init_fn'}
+_TRANSFORM_ARGS = {'transform_name', 'input_size', 'scale_size', 'normalize', 'augment',
+                   'cutout', 'duplicates', 'num_crops', 'autoaugment'}
+_OTHER_ARGS = {'distributed'}
+
+
+def build_target(path):
+    targets = []
+    for img in os.listdir(path)[:1000]:  # image loading constraint!
+        targets.append(re.findall(r'_(.*?)J', img)[0][:-1])
+    return np.array(targets)
+
+
+def pil_loader(path: str) -> Image.Image:
+    base = '../imagenet'
+    with open(f'{base}/{path}', "rb") as f:
+        img = Image.open(f)
+        return img.convert("RGB")
+
+
+def find_classes(directory):
+    classes_from_paths = build_target(directory)
+    mapping = {i: j for i, j in zip(classes_from_paths, range(len(classes_from_paths)))}
+    return classes_from_paths, mapping
+
+
+def make_dataset(directory, class_to_idx=None, extensions=None,
+                 is_valid_file=None):
+    directory = os.path.expanduser(directory)
+
+    if class_to_idx is None:
+        _, class_to_idx = find_classes(directory)
+    instances = []
+    available_classes = set()
+    for img in os.listdir(directory)[:1000]:  # image loading constraint!
+        tar_class = re.findall(r'_(.*?)J', img)[0][:-1]
+        item = (img, tar_class)
+        instances.append(item)
+        if tar_class not in available_classes:
+            available_classes.add(tar_class)
+    return instances
+
+
+class CustomFolder(datasets.DatasetFolder):
+    def find_classes(self, directory):
+        classes_from_paths = build_target(directory)
+        mapping = {i: j for i, j in zip(classes_from_paths, range(len(classes_from_paths)))}
+        return classes_from_paths, mapping
+
+    def make_dataset(self, directory, class_to_idx, extensions=None,
+                     is_valid_file=None):
+        return make_dataset(directory, class_to_idx, extensions=extensions, is_valid_file=is_valid_file)
+
+
+class CustomDataset(Dataset):
+    def __init__(self, path):
+        self.batch_size = 64
+        transform = T.Compose([T.Resize(232),  # Resize images to 232 x 232
+                               T.CenterCrop(232),  # Center crop image
+                               T.RandomHorizontalFlip(),
+                               T.ToTensor(),  # Converting cropped images to tensors
+                               T.Normalize(mean=[0.485, 0.456, 0.406],
+                                           std=[0.229, 0.224, 0.225])])
+        self.data = CustomFolder(path, transform=transform, loader=pil_loader)
+
+    def shuffle_dataloader(self):
+        self.loader = DataLoader(self.data, batch_size=self.batch_size,
+                                 num_workers=2, drop_last=True, shuffle=True)
+
+    def change_batch(self, b_size):
+        self.bacth_size = b_size
+        self.loader = DataLoader(self.data, batch_size=self.batch_size,
+                                 num_workers=2, drop_last=True, shuffle=True)
+
+    def __getitem__(self, idx):
+        return self.data[idx]
+
+    def __len__(self):
+        return len(self.data)
+
 
 def get_dataset(name, split='train', transform=None,
-                target_transform=None, download=True, datasets_path='~/Datasets'):
+                target_transform=None, download=True, datasets_path='../imagenet'):
     train = (split == 'train')
     root = os.path.join(os.path.expanduser(datasets_path), name)
     if name == 'cifar10':
@@ -46,13 +135,7 @@ def get_dataset(name, split='train', transform=None,
                               target_transform=target_transform,
                               download=download)
     elif name == 'imagenet':
-        if train:
-            root = os.path.join(root, 'train')
-        else:
-            root = os.path.join(root, 'val')
-        return datasets.ImageFolder(root=root,
-                                    transform=transform,
-                                    target_transform=target_transform)
+        return CustomDataset('../imagenet')
     elif name == 'imagenet_calib':
         if train:
             root = os.path.join(root.replace('imagenet_calib','imagenet'), 'calib')
@@ -60,7 +143,7 @@ def get_dataset(name, split='train', transform=None,
             root = os.path.join(root, 'val')
         return datasets.ImageFolder(root=root,
                                     transform=transform,
-                                    target_transform=target_transform)       
+                                    target_transform=target_transform)
     elif name == 'imagenet_calib_10K':
         if train:
             root = os.path.join(root.replace('imagenet_calib_10K','imagenet'), 'calib_10K')
@@ -68,7 +151,7 @@ def get_dataset(name, split='train', transform=None,
             root = os.path.join(root, 'val')
         return datasets.ImageFolder(root=root,
                                     transform=transform,
-                                    target_transform=target_transform)                                                                   
+                                    target_transform=target_transform)
     elif name == 'imagenet_tar':
         if train:
             root = os.path.join(root, 'imagenet_train.tar')
@@ -78,49 +161,6 @@ def get_dataset(name, split='train', transform=None,
             lambda fname: fname.split('/')[0]),
             transform=transform,
             target_transform=target_transform)
-
-
-_DATA_ARGS = {'name', 'split', 'transform',
-              'target_transform', 'download', 'datasets_path'}
-_DATALOADER_ARGS = {'batch_size', 'shuffle', 'sampler', 'batch_sampler',
-                    'num_workers', 'collate_fn', 'pin_memory', 'drop_last',
-                    'timeout', 'worker_init_fn'}
-_TRANSFORM_ARGS = {'transform_name', 'input_size', 'scale_size', 'normalize', 'augment',
-                   'cutout', 'duplicates', 'num_crops', 'autoaugment'}
-_OTHER_ARGS = {'distributed'}
-
-
-#class ImageNetCalib(datasets.ImageFolder):
-#    """Small calibration dataset taken from training."""
-#
-#    def __init__(self, root,transform=None, target_transform=None):
-#        """
-#        Args:
-#            csv_file (string): Path to the csv file with annotations.
-#            root_dir (string): Directory with all the images.
-#            transform (callable, optional): Optional transform to be applied
-#                on a sample.
-#        """
-#        self.samples,self.target = torch.load(root)
-#        self.samples  = Image.fromarray(np.uint8(self.samples.permute(0,2,3,1).contiguous().numpy()))
-#        self.root = root
-#        self.transform = transform
-#        self.target_transform = target_transform
-#
-#
-#    def __len__(self):
-#        return len(self.target)
-#
-#    def __getitem__(self, idx):
-#        samples = self.samples[idx]
-#        target = self.target[idx]
-#        if self.transform is not None:
-#            #import pdb; pdb.set_trace()
-#            print(samples.shape)
-#            samples = self.transform(samples)
-#        if self.target_transform is not None:
-#            target = self.target_transform(target)
-#        return samples,target #,idx
 
 
 class DataRegime(object):

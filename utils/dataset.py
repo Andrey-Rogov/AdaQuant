@@ -3,8 +3,9 @@ import pickle
 import PIL
 import torch
 from torch.utils.data import Dataset
-from torch.utils.data.sampler import Sampler, RandomSampler, BatchSampler, _int_classes
+from torch.utils.data.sampler import Sampler, RandomSampler, BatchSampler
 from numpy.random import choice
+
 
 class RandomSamplerReplacment(torch.utils.data.sampler.Sampler):
     """Samples elements randomly, with replacement.
@@ -145,7 +146,7 @@ class DuplicateBatchSampler(Sampler):
             raise ValueError("sampler should be an instance of "
                              "torch.utils.data.Sampler, but got sampler={}"
                              .format(sampler))
-        if not isinstance(batch_size, _int_classes) or isinstance(batch_size, bool) or \
+        if not isinstance(batch_size, int) or isinstance(batch_size, bool) or \
                 batch_size <= 0:
             raise ValueError("batch_size should be a positive integeral value, "
                              "but got batch_size={}".format(batch_size))
