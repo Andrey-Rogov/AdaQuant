@@ -61,7 +61,7 @@ def make_dataset(directory, class_to_idx=None, extensions=None,
     available_classes = set()
     for img in os.listdir(directory)[:1000]:  # image loading constraint!
         tar_class = re.findall(r'_(.*?)J', img)[0][:-1]
-        item = (img, tar_class)
+        item = (img, int(tar_class))
         instances.append(item)
         if tar_class not in available_classes:
             available_classes.add(tar_class)

@@ -17,7 +17,6 @@ from utils.optim import OptimRegime
 from utils.cross_entropy import CrossEntropyLoss
 from utils.misc import torch_dtypes
 from utils.param_filter import FilterModules, is_bn
-from utils.convert_pytcv_model import convert_pytcv_model
 from datetime import datetime
 from ast import literal_eval
 from trainer import Trainer
@@ -65,7 +64,7 @@ parser.add_argument('--dtype', default='float',
                     help='type of tensor: ' +
                     ' | '.join(torch_dtypes.keys()) +
                     ' (default: float)')
-parser.add_argument('--device', default='cuda',
+parser.add_argument('--device', default='cpu',
                     help='device assignment ("cpu" or "cuda")')
 parser.add_argument('--device-ids', default=[0], type=int, nargs='+',
                     help='device ids assignment (e.g 0 1 2 3')
@@ -214,7 +213,7 @@ def main_worker(args):
     time_stamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     if args.evaluate:
         args.results_dir = '/tmp'
-    if args.save is '':
+    if args.save == '':
         args.save = time_stamp
     save_path = os.path.join(args.results_dir, args.save)
 
@@ -235,7 +234,7 @@ def main_worker(args):
         os.makedirs(save_path)
 
     setup_logging(os.path.join(save_path, 'log.txt'),
-                  resume=args.resume is not '',
+                  resume=args.resume != '',
                   dummy=args.distributed and args.local_rank > 0)
 
     results_path = os.path.join(save_path, 'results')
@@ -254,11 +253,12 @@ def main_worker(args):
         args.device_ids = None
 
     # create model
+    # TODO solve warning: add weights=ImageNet instead of "pretrained"
     model = models.__dict__[args.model]
     dataset_type = 'imagenet' if args.dataset =='imagenet_calib' else args.dataset
     model_config = {'dataset': dataset_type}
 
-    if args.model_config is not '':
+    if args.model_config != '':
         if isinstance(args.model_config, dict):
             for k, v in args.model_config.items():
                 if k not in model_config.keys():
@@ -275,8 +275,8 @@ def main_worker(args):
             if 'pytcv' in args.model:
                 from pytorchcv.model_provider import get_model as ptcv_get_model
                 exec_lfv_str ='ptcv_get_model("'+ args.load_from_vision +'", pretrained=True)'
-                model_pytcv = eval(exec_lfv_str)
-                model = convert_pytcv_model(model,model_pytcv)
+                model = eval(exec_lfv_str)
+                # model = convert_pytcv_model(model,model_pytcv)
         else:
             if not os.path.isfile(args.absorb_bn):
                 parser.error('invalid checkpoint: {}'.format(args.evaluate))

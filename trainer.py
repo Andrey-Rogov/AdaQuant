@@ -130,6 +130,7 @@ class Trainer(object):
         return grad
 
     def _step(self, inputs_batch, target_batch, training=False, average_output=False, chunk_batch=1):
+        target_batch = torch.tensor(target_batch)
         outputs = []
         total_loss = 0
 
