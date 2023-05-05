@@ -39,7 +39,7 @@ def build_target(path):
 
 
 def pil_loader(path: str) -> Image.Image:
-    base = '../imagenet'
+    base = "../data/val_images"
     with open(f'{base}/{path}', "rb") as f:
         img = Image.open(f)
         return img.convert("RGB")
@@ -107,7 +107,7 @@ class CustomDataset(Dataset):
 
 
 def get_dataset(name, split='train', transform=None,
-                target_transform=None, download=True, datasets_path='../imagenet'):
+                target_transform=None, download=True, datasets_path="../data/val_images"):
     train = (split == 'train')
     root = os.path.join(os.path.expanduser(datasets_path), name)
     if name == 'cifar10':
@@ -135,7 +135,7 @@ def get_dataset(name, split='train', transform=None,
                               target_transform=target_transform,
                               download=download)
     elif name == 'imagenet':
-        return CustomDataset('../imagenet')
+        return CustomDataset("../data/val_images")
     elif name == 'imagenet_calib':
         if train:
             root = os.path.join(root.replace('imagenet_calib','imagenet'), 'calib')

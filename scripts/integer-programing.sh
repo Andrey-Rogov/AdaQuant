@@ -1,4 +1,4 @@
-export datasets_dir=/media/drive/Datasets
+export datasets_dir="../data/val_images"
 export model=${1:-"resnet"}
 export model_vis=${2:-"resnet50"}
 export nbits_weight_m1=${3:-4}
@@ -30,7 +30,7 @@ export loss=${8:-'loss'}
 export layer_by_layer=results/$workdir_m2/$model.absorb_bn.measure$perC_suffix$adaquant_suffix.per_layer_accuracy.A$nbits_weight_m1.W$nbits_weight_m1.csv
 
 #Extract per layer loss delta
-python main.py --model $model --evaluate results/$workdir_m2/$model.absorb_bn'.measure'$perC_suffix$adaquant_suffix --model-config "{'batch_norm': False,'measure': False, 'perC': $perC, 'depth': $depth}" -b 100 --dataset imagenet_calib --datasets-dir $datasets_dir --int8_opt_model_path results/$workdir_m2/$model.absorb_bn'.measure'$perC_suffix$adaquant_suffix --int4_opt_model_path results/$workdir_m1/$model.absorb_bn'.measure'$perC_suffix$adaquant_suffix --names-sp-layers '' --per-layer
+python main.py --model $model --evaluate results/$workdir_m2/$model.absorb_bn'.measure'$perC_suffix$adaquant_suffix --model-config "{'batch_norm': False,'measure': False, 'perC': $perC, 'depth': $depth}" -b 100 --dataset imagenet --datasets-dir $datasets_dir --int8_opt_model_path results/$workdir_m2/$model.absorb_bn'.measure'$perC_suffix$adaquant_suffix --int4_opt_model_path results/$workdir_m1/$model.absorb_bn'.measure'$perC_suffix$adaquant_suffix --names-sp-layers '' --per-layer
 
 #Run IP algorithm to obtain best topology
 python mpip_compression_pytorch_multi.py --model $model  --model_vis $model_vis --ip_method $loss --precisions $precisions --layer_by_layer_files $layer_by_layer --min_compression $min_compression --max_compression $max_compression $do_not_use_adaquant --datasets-dir $datasets_dir

@@ -1,4 +1,4 @@
-export datasets_dir=/media/drive/Datasets
+export datasets_dir="../data/val_images"
 export model=${1:-"resnet"}
 export model_vis=${2:-"resnet50"}
 export nbits_weight=${3:-4}
@@ -21,5 +21,5 @@ prec_dict=$(python ip_config_parser.py --cfg-idx $cmp_idx --config-file results/
 export ckp_name=resnet.absorb_bn.mixed-ip-results.comp_0.13_loss
 
 # Run bias tuning
-python main.py -lpd "$prec_dict" --bias-tuning --model $model -b 200 --evaluate results/$workdir/$ckp_name --model-config "{'batch_norm': False,'measure': False, 'perC': $perC}" --dataset imagenet_calib --datasets-dir $datasets_dir --save results/$workdir/bias_ft -b 50  --fine-tune --update_only_th --kld_loss --epochs 10
+python main.py -lpd "$prec_dict" --bias-tuning --model $model -b 200 --evaluate results/$workdir/$ckp_name --model-config "{'batch_norm': False,'measure': False, 'perC': $perC}" --dataset imagenet --datasets-dir $datasets_dir --save results/$workdir/bias_ft -b 50  --fine-tune --update_only_th --kld_loss --epochs 10
 

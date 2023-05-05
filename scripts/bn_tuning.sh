@@ -1,4 +1,4 @@
-export datasets_dir=/media/drive/Datasets
+export datasets_dir="../data/val_images"
 export model=${1:-"resnet"}
 export model_vis=${2:-"resnet50"}
 export nbits_weight=${3:-4}
@@ -21,5 +21,5 @@ prec_dict=$(python ip_config_parser.py --cfg-idx $cfg_idx --config-file results/
 ckp=$(python ip_config_parser.py --cfg-idx $cfg_idx --config-file results/$workdir/IP_${model_vis}_loss.txt --column state_dict_path)
 
 # Run bn tuning
-python main.py -lpd "$prec_dict" --batch-norn-tuning --model $model -lfv $model_vis -b 200 --evaluate $ckp --model-config "{'batch_norm': False,'measure': False, 'perC': $perC}" --dataset imagenet_calib --datasets-dir $datasets_dir
+python main.py -lpd "$prec_dict" --batch-norn-tuning --model $model -lfv $model_vis -b 200 --evaluate $ckp --model-config "{'batch_norm': False,'measure': False, 'perC': $perC}" --dataset imagenet --datasets-dir $datasets_dir
 

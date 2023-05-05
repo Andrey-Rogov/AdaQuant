@@ -47,7 +47,7 @@ parser.add_argument('--results-dir', metavar='RESULTS_DIR', default='./results',
                     help='results dir')
 parser.add_argument('--save', metavar='SAVE', default='',
                     help='saved folder')
-parser.add_argument('--datasets-dir', metavar='DATASETS_DIR', default='../imagenet',
+parser.add_argument('--datasets-dir', metavar='DATASETS_DIR', default='../data/val_images',
                     help='datasets dir')
 parser.add_argument('--dataset', metavar='DATASET', default='imagenet',
                     help='dataset name or folder')
@@ -64,7 +64,7 @@ parser.add_argument('--dtype', default='float',
                     help='type of tensor: ' +
                     ' | '.join(torch_dtypes.keys()) +
                     ' (default: float)')
-parser.add_argument('--device', default='cpu',
+parser.add_argument('--device', default='cuda',
                     help='device assignment ("cpu" or "cuda")')
 parser.add_argument('--device-ids', default=[0], type=int, nargs='+',
                     help='device ids assignment (e.g 0 1 2 3')
