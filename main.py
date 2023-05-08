@@ -33,7 +33,6 @@ import pandas as pd
 import math
 import shutil
 from models.modules.quantize import QParams
-import ast
 import ntpath
 from functools import partial
 
@@ -76,9 +75,9 @@ parser.add_argument('--dist-init', default='env://', type=str,
                     help='init used to set up distributed training')
 parser.add_argument('--dist-backend', default='nccl', type=str,
                     help='distributed backend')
-parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
-                    help='number of data loading workers (default: 8)')
-parser.add_argument('--epochs', default=90, type=int, metavar='N',
+parser.add_argument('-j', '--workers', default=2, type=int, metavar='N',
+                    help='number of data loading workers (default: 2)')
+parser.add_argument('--epochs', default=10, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=-1, type=int, metavar='N',
                     help='manual epoch number (useful on restarts). -1 for unset (will start at 0)')
@@ -253,7 +252,7 @@ def main_worker(args):
         args.device_ids = None
 
     # create model
-    # TODO solve warning: add weights=ImageNet instead of "pretrained"
+    # TODO solve warning: add weights=ResNet50_Weights.IMAGENET1K_V2 instead of "pretrained"
     model = models.__dict__[args.model]
     dataset_type = 'imagenet' if args.dataset =='imagenet_calib' else args.dataset
     model_config = {'dataset': dataset_type}
@@ -411,7 +410,7 @@ def main_worker(args):
     if args.evaluate or args.resume:
         from utils.layer_sensativity import search_replace_layer , extract_save_quant_state_dict, search_replace_layer_from_dict
         if args.layers_precision_dict is not None:
-            model = search_replace_layer_from_dict(model, ast.literal_eval(args.layers_precision_dict))
+            model = search_replace_layer_from_dict(model, literal_eval(args.layers_precision_dict))
         else:
             model = search_replace_layer(model, args.names_sp_layers, num_bits_activation=args.nbits_act,
                                          num_bits_weight=args.nbits_weight)

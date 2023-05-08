@@ -130,7 +130,7 @@ def get_args():
     parser.add_argument('--num_exp', default=1, type=int, help='number of experiments per compression level')
     parser.add_argument('--sigma', default=None, type=float, help='sigma noise to add to measurements')
     parser.add_argument('--layer_by_layer_files', type=str, default='./results/resnet50_w8a8_adaquant/resnet.absorb_bn.measure.adaquant.per_layer_accuracy.csv', help='layer degradation csv file')
-    parser.add_argument('--datasets-dir', type=str, default='/media/drive/Datasets', help='dataset dir')
+    parser.add_argument('--datasets-dir', type=str, default='../data/val_images', help='dataset dir')
     parser.add_argument('--precisions', type=str, default='8;4', help='precisions, base first, separated by ;')
     parser.add_argument('--max_compression', type=float, default='0.25', help='max compression to test')
     parser.add_argument('--min_compression', type=float, default='0.13', help='min compression to test')
@@ -172,7 +172,7 @@ output_fname = os.path.join(workdirs[0], 'IP_{}_{}{}.txt'.format(model_vis, ip_m
 
 eval_dict = {'model': model,
              'evaluate': eval_dir,
-             'dataset': 'imagenet_calib',
+             'dataset': 'imagenet',
              'datasets_dir': datasets_dir,
              'b': 100,
              'model_config': model_config,
