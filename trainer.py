@@ -322,7 +322,7 @@ class Trainer(object):
         self.model.train()
         return self.forward(data_loader, duplicates=duplicates, training=True, average_output=average_output, chunk_batch=chunk_batch)
 
-    def validate(self, data_loader, average_output=False, duplicates=1,num_steps=None,rec=False):
+    def validate(self, data_loader, average_output=False, duplicates=1,num_steps=None,rec=True):
         # switch to evaluate mode
         self.model.eval()
         with torch.no_grad():
